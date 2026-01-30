@@ -1,6 +1,16 @@
 import esbuild from "esbuild";
 import process from "process";
 import { builtinModules } from 'node:module';
+import fs from "fs";
+
+
+const wasmPath = "node_modules/sql.js/dist/sql-wasm.wasm";
+const outPath = "sql-wasm.wasm"; // 放到输出目录
+
+if (fs.existsSync(wasmPath)) {
+    fs.copyFileSync(wasmPath, outPath);
+    console.log("WASM file copied to root.");
+}
 
 const banner =
 `/*
@@ -33,6 +43,7 @@ const context = await esbuild.context({
 		"@lezer/lr",
 		...builtinModules],
 	format: "cjs",
+	platform: "node",
 	target: "es2018",
 	logLevel: "info",
 	sourcemap: prod ? false : "inline",
