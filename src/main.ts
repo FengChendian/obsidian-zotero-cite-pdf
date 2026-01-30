@@ -1,12 +1,13 @@
-import { Editor, MarkdownView, Notice, Plugin, ObsidianProtocolData } from 'obsidian';
-import { DEFAULT_SETTINGS, MyPluginSettings, ZoteroCiteSettingTab } from "./settings";
-import * as fs from 'fs';
+import { Editor, MarkdownView, Plugin, ObsidianProtocolData } from 'obsidian';
+import { DEFAULT_SETTINGS, ZoteroCitePDFPluginSettings, ZoteroCiteSettingTab } from "./settings";
+// eslint-disable-next-line import/no-nodejs-modules
+import fs from 'node:fs';
 import initSqlJs, { Database } from "sql.js";
 import open from 'open';
 import { ZoteroSearchModal } from 'search-modal';
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class ZoteroCitePDFPlugin extends Plugin {
+	settings: ZoteroCitePDFPluginSettings;
 	db: Database;
 
 	async onload() {
@@ -14,7 +15,7 @@ export default class MyPlugin extends Plugin {
 
 
 		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('library', 'Zotero Search Literature', async (evt: MouseEvent) => {
+		this.addRibbonIcon('library', 'Search literature', async (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
 			// new Notice('This is a notice!');
 			await this.tryInitZoteroDatabase(this.settings.zoteroDatabaseSqlFile);
@@ -22,12 +23,13 @@ export default class MyPlugin extends Plugin {
 		});
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Zotero Cite PDF');
+		// const statusBarItemEl = this.addStatusBarItem();
+		// statusBarItemEl.setText('Zotero cite PDF');
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
 			id: 'open-zotero-search',
+			// eslint-disable-next-line obsidianmd/ui/sentence-case
 			name: 'Search Zotero Literature',
 			// 仅在编辑器视图下可用
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
@@ -93,11 +95,11 @@ export default class MyPlugin extends Plugin {
 		if (results.length === 0 || !results || !results[0]) return [];
 
 		return results[0].values.map(row => {
-			const itemKey = row[0];
+			const itemKey = row[0] as string;
 			const title = row[1];
 			let fullPath = null;
 
-			if (row[2]) {
+			if (row[2] && itemKey) {
 				// Zotero 内部路径格式通常为 "storage:Paper.pdf"
 				const fileName = String(row[2]).replace(/^storage:/, '');
 				// 最终物理路径: 数据目录/storage/条目Key/文件名
@@ -108,12 +110,12 @@ export default class MyPlugin extends Plugin {
 		});
 	}
 
-	async handleProtocolCall(title: string, content?: string) {
-		// 在这里编写你的逻辑，例如创建新笔记或弹窗提醒
-		console.log(`收到协议请求！标题: ${title}, 内容: ${content}`);
+	// async handleProtocolCall(title: string, content?: string) {
+	// 	// 在这里编写你的逻辑，例如创建新笔记或弹窗提醒
+	// 	// console.log(`收到协议请求！标题: ${title}, 内容: ${content}`);
 
-		new Notice(`自定义协议已触发：${title}`);
-	}
+	// 	new Notice(`自定义协议已触发：${title}`);
+	// }
 
 	async tryInitZoteroDatabase(absolutePath: string) {
 
@@ -123,7 +125,7 @@ export default class MyPlugin extends Plugin {
 				// 某些版本的 SQLite 环境支持 query_only
 				this.db.run("PRAGMA query_only = ON;");
 			} catch (e) {
-				console.warn("PRAGMA query_only not supported, falling back to manual read-only logic.");
+				console.warn("PRAGMA query_only not supported, falling back to manual read-only logic. Error:", e);
 			}
 		}
 
@@ -150,7 +152,7 @@ export default class MyPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<MyPluginSettings>);
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<ZoteroCitePDFPluginSettings>);
 	}
 
 	async saveSettings() {

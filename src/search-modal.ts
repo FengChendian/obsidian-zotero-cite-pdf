@@ -1,5 +1,7 @@
 import { App, SuggestModal, MarkdownView, Notice } from "obsidian";
-import path from "path";
+// eslint-disable-next-line import/no-nodejs-modules
+import path from "node:path";
+import { Database } from "sql.js";
 
 interface ZoteroItem {
     key: string;
@@ -9,11 +11,11 @@ interface ZoteroItem {
 }
 
 export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
-    db: any; // 传入你已经加载好的 SQL.Database
+    db: Database; // 传入你已经加载好的 SQL.Database
     zoteroDataDir: string;
     excludedExtensions: string[];
 
-    constructor(app: App, db: any, zoteroDataDir: string, excludedExtensions: string[]) {
+    constructor(app: App, db: Database, zoteroDataDir: string, excludedExtensions: string[]) {
         super(app);
         this.db = db;
         this.zoteroDataDir = zoteroDataDir;
@@ -46,20 +48,21 @@ export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
         `;
 
         const results = this.db.exec(sql, [`%${query}%`]);
-        if (results.length === 0) return [];
+        if (results.length === 0 || !results[0]) return [];
         // console.log("SQL 查询结果:", results);
-        return results[0].values.map((row: any) => {
-            const itemKey = row[0];       // 主条目 Key
+        return results[0].values.map((row: string[]) => {
+            const itemKey = row[0] || "";       // 主条目 Key
+            const title = row[1] || "";
             const attachKey = row[2];     // 附件自己的 Key (例如 UQPBFB3K)
 
             const rawPath = row[3] || "";
             const contentType = row[4] || "";
             if (!attachKey || !rawPath) {
                 // 如果没有附件 Key 或路径，说明没有 PDF 附件
-                // new Notice(`条目 "${row[1]}" 没有找到 PDF 附件`);
+                // new Notice(`条目 "${title}" 没有找到 PDF 附件`);
                 return {
                     key: itemKey,
-                    title: row[1],
+                    title: title,
                     fullPath: null,
                     type: "Other"
                 };
@@ -74,11 +77,11 @@ export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
 
             return {
                 key: itemKey,
-                title: row[1],
+                title: title,
                 fullPath: fullPath,
                 type: type
             };
-        }).filter((item: any) => {
+        }).filter((item: ZoteroItem) => {
             // --- 核心过滤逻辑 ---
             if (!item.fullPath) return false; // 如果没有附件，不保留条目
 
@@ -96,25 +99,15 @@ export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
     renderSuggestion(item: ZoteroItem, el: HTMLElement) {
         const container = el.createEl("div", { cls: "zotero-cite-pdf-result-item" });
 
-        // 左侧显示分类标签
-        const typeTag = container.createEl("span", {
+        // 直接创建，不赋值给变量
+        container.createEl("span", {
             text: item.type,
-            cls: `zotero-cite-pdf-tag tag-${item.type.toLowerCase().replace(' ', '-')}`
+            cls: `zotero-cite-pdf-tag tag-${item.type.toLowerCase().replace(/\s+/g, '-')}`
         });
 
-        // 中间显示标题
         container.createEl("span", { text: item.title, cls: "zotero-cite-pdf-title" });
 
-        // 右侧显示 Key (淡淡的字体)
         container.createEl("small", { text: ` [${item.key}]`, cls: "zotero-cite-pdf-key" });
-
-        // 样式微调
-        typeTag.style.marginRight = "10px";
-        typeTag.style.fontSize = "0.7em";
-        typeTag.style.padding = "2px 5px";
-        typeTag.style.borderRadius = "4px";
-        typeTag.style.backgroundColor = item.type === 'PDF' ? '#cc0000' : '#4a4a4a';
-        typeTag.style.color = "white";
     }
 
     // 用户点击某一项后的动作

@@ -6,3 +6,33 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+
+/* 基础标签样式 */
+.zotero-cite-pdf-tag {
+    margin-right: 10px;
+    font-size: 0.7em;
+    padding: 2px 5px;
+    border-radius: 4px;
+    color: white;
+    background-color: #4a4a4a; /* 默认颜色 */
+}
+
+/* 针对不同类型的特定样式 */
+.zotero-cite-pdf-tag.tag-pdf {
+    background-color: #cc0000;
+}
+
+/* 你甚至可以为其他类型添加颜色，而不需要改动 JS */
+.zotero-cite-pdf-tag.tag-png {
+    background-color: #2b6cb0;
+}
+
+/* 标题和 Key 的样式也可以顺便收纳进来 */
+.zotero-cite-pdf-title {
+    font-weight: 500;
+}
+
+.zotero-cite-pdf-key {
+    color: var(--text-muted); /* 推荐使用 Obsidian 变量 */
+    opacity: 0.6;
+}
