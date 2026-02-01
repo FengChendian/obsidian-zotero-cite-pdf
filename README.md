@@ -12,7 +12,7 @@ Cite zotero pdf/html/others and directly open it in obsidian.
 
 ## Directly Open Assets of Zotero
 
-<video controls src="./assets/open.mov" title="Open assets"></video>
+<video controls src="./assets/open.mp4" title="Open assets"></video>
 
 ## Settings
 
