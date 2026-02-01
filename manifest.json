@@ -5,7 +5,6 @@
 	"minAppVersion": "0.15.0",
 	"description": "Cite zotero-pdf and directly open zotero-pdf in obsidian.",
 	"author": "Yichen Zhao",
-	"authorUrl": "https://github.com/FengChendian/obsidian-zotero-cite-pdf",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"authorUrl": "https://fengchendian.github.io/",
 	"isDesktopOnly": true
 }
