@@ -1,10 +1,10 @@
 import { Editor, MarkdownView, Plugin, ObsidianProtocolData } from 'obsidian';
 import { DEFAULT_SETTINGS, ZoteroCitePDFPluginSettings, ZoteroCiteSettingTab } from "./settings";
-// eslint-disable-next-line import/no-nodejs-modules
 import fs from 'node:fs';
 import initSqlJs, { Database } from "sql.js";
 import open from 'open';
 import { ZoteroSearchModal } from 'search-modal';
+import wasmBinary from "../node_modules/sql.js/dist/sql-wasm.wasm";
 
 export default class ZoteroCitePDFPlugin extends Plugin {
 	settings: ZoteroCitePDFPluginSettings;
@@ -133,15 +133,8 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 	}
 
 	async loadDatabase(absolutePath: string): Promise<Database> {
-		// 获取插件所在目录的路径
-		const pluginPath = this.manifest.dir;
-		const wasmPath = `${pluginPath}/sql-wasm.wasm`;
-
-		// 使用 Obsidian 的 adapter 读取本地文件二进制
-		const wasmBuffer = await this.app.vault.adapter.readBinary(wasmPath);
-
 		const SQL = await initSqlJs({
-			wasmBinary: wasmBuffer
+			wasmBinary: wasmBinary
 		});
 		const fileBuffer = fs.readFileSync(absolutePath);
 		return new SQL.Database(new Uint8Array(fileBuffer));

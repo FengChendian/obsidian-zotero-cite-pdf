@@ -1,36 +1,9 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import ZoteroCitePDFPlugin from "./main";
-// eslint-disable-next-line import/no-nodejs-modules
 import path from "node:path";
+import { t } from "./lang/lang-helper";
 
-// 声明 Electron 接口防止报错
-// 定义返回结果的结构
-interface OpenDialogReturnValue {
-    canceled: boolean;
-    filePaths: string[];
-}
 
-// 定义配置项的结构 (这里列举常用项)
-interface OpenDialogOptions {
-    title?: string;
-    defaultPath?: string;
-    buttonLabel?: string;
-    filters?: { name: string; extensions: string[] }[];
-    properties?: Array<'openFile' | 'openDirectory' | 'multiSelections' | 'showHiddenFiles'>;
-}
-
-declare global {
-    interface Window {
-        electron: {
-            remote: {
-                dialog: {
-                    // 使用具体的类型代替 any
-                    showOpenDialog(options: OpenDialogOptions): Promise<OpenDialogReturnValue>;
-                };
-            };
-        };
-    }
-}
 export interface ZoteroCitePDFPluginSettings {
 	mySetting: string;
 	// 1. 默认打开程序路径
@@ -104,15 +77,15 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 
 		// new Setting(containerEl).setName('插件设置').setDesc('配置 Zotero Cite PDF 插件的各项参数');
 		// --- 1. 应用程序路径选择 ---
-		this.addPathSetting('PDF阅读器', 'pdfAppPath', ['exe', 'app']);
-		this.addPathSetting('浏览器', 'browserAppPath', ['exe', 'app']);
+		this.addPathSetting(t('OPEN_PDF_SETTINGS_NAME'), 'pdfAppPath', ['exe', 'app']);
+		this.addPathSetting(t('OPEN_BROWSER_SETTINGS_NAME'), 'browserAppPath', ['exe', 'app']);
 
 		// --- 2. Zotero 数据库选择 (限定 .sqlite) ---
 		new Setting(containerEl)
-			.setName('Zotero数据库位置')
-			.setDesc('选择存储库的位置')
+			.setName(t('ZOTERO_DATABASE_LOCATION'))
+			.setDesc(t('SELECT_ZOTERO_DATABASE_FOLDER'))
 			.addButton(button => button
-				.setButtonText("选择文件夹")
+				.setButtonText(t('SELECT_FOLDER'))
 				.onClick(async () => {
 					const dirPath = await pickPath(true);
 					if (dirPath) {
@@ -129,9 +102,8 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 
 		// --- 3. 排除文件类型 (保持手动输入，因为这更像标签管理) ---
 		new Setting(containerEl)
-			.setName('排除的文件后缀')
-			// eslint-disable-next-line obsidianmd/ui/sentence-case
-			.setDesc('不参与搜索的文件后缀 (如: html, png)')
+			.setName(t('EXCLUDED_FILE_EXTENSIONS'))
+			.setDesc(t('EXCLUDED_FILE_EXTENSIONS_DESC'))
 			.addText(text => text
 				// eslint-disable-next-line obsidianmd/ui/sentence-case
 				.setPlaceholder('html, png (examples)')
@@ -147,10 +119,10 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 	// 封装一个通用的路径选择 Setting 项
 	addPathSetting(name: string, settingKey: keyof ZoteroCitePDFPluginSettings, exts: string[]) {
 		new Setting(this.containerEl)
-			.setName(`${name}路径`)
-			.setDesc(`指定用于打开文件的${name}程序`)
+			.setName(`${name}`)
+			.setDesc(t('OPEN_FILE_DESC'))
 			.addButton(btn => btn
-				.setButtonText("浏览")
+				.setButtonText(t('EXPLORE_FILE'))
 				.onClick(async () => {
 					const path = await window.electron.remote.dialog.showOpenDialog({
 						properties: ['openFile']
@@ -163,7 +135,7 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 				}))
 			.addText(text => text
 				.setValue((this.plugin.settings)[settingKey] as string)
-				.setPlaceholder('使用系统默认程序')
+				.setPlaceholder(t('USE_DEFAULT_APP'))
 				.onChange(async (val) => {
 					(this.plugin.settings[settingKey] as string) = val;
 					await this.plugin.saveSettings();

@@ -1,5 +1,4 @@
 import { App, SuggestModal, MarkdownView, Notice } from "obsidian";
-// eslint-disable-next-line import/no-nodejs-modules
 import path from "node:path";
 import { Database } from "sql.js";
 
