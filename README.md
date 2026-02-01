@@ -14,7 +14,8 @@ Cite zotero pdf/html/others and directly open it in obsidian.
 
 > You can open PDF/HTML link by custom app
 
-<video controls src="./assets/open.mp4" width="600" controls></video>
+https://github.com/user-attachments/assets/0b0b782c-0fc1-45e4-bdfd-29be2252c817
+
 
 ## Settings
 
