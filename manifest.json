@@ -1,7 +1,7 @@
 {
 	"id": "zotero-cite-pdf",
 	"name": "Zotero Cite PDF",
-	"version": "1.0.4",
+	"version": "1.0.5",
 	"minAppVersion": "0.15.0",
 	"description": "Cite zotero-pdf and directly open zotero-pdf.",
 	"author": "Yichen Zhao",
