@@ -68,7 +68,7 @@ export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
                 };
             }
 
-            const fullPath = path.join("storage", attachKey, rawPath.replace(/^storage:/, ""));
+            const fullPath = path.join("storage", attachKey, rawPath.replace(/^storage:/, "")).replace(/\\/g, '/');
 
             let type = "File";
             if (contentType.includes("pdf")) type = "PDF";
