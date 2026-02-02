@@ -2,6 +2,11 @@
 
 Cite zotero pdf/html/others and directly open it in obsidian.
 
+## Prepare
+
+1. Go to Settings
+2. Set Zotero database folder (Zotero data directory).
+
 ## Search Literature of Zotero
 
 1. Click search button || Use command: Search Zotero Literature
