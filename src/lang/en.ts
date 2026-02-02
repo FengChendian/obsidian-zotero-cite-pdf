@@ -1,7 +1,6 @@
 import { LanguageMap } from "./lang-type";
 
 const en: LanguageMap = {
-    // 设置界面
     OPEN_PDF_SETTINGS_NAME: "PDF Reader Path",
     OPEN_BROWSER_SETTINGS_NAME: "Browser Path",
     OPEN_FILE_DESC: "Open With...",
@@ -11,7 +10,7 @@ const en: LanguageMap = {
 
     EXCLUDED_FILE_EXTENSIONS: "Excluded File Extensions",
     EXCLUDED_FILE_EXTENSIONS_DESC: "File extensions to exclude from search (e.g., html, png)",
-    
+
     USE_DEFAULT_APP: "Use Default Application",
     EXPLORE_FILE: "Explore",
     SELECT_FOLDER: "Select Folder",

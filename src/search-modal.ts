@@ -6,11 +6,11 @@ interface ZoteroItem {
     key: string;
     title: string;
     fullPath: string | null;
-    type: string; // 用于 UI 分类：'PDF', 'Web', 'Other'
+    type: string;
 }
 
 export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
-    db: Database; // 传入你已经加载好的 SQL.Database
+    db: Database;
     zoteroDataDir: string;
     excludedExtensions: string[];
 
@@ -22,9 +22,10 @@ export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
         this.setPlaceholder("输入文献标题进行模糊搜索...");
     }
 
-    // 根据输入执行 SQL 查询
+    // According to the query, return matching Zotero items
     getSuggestions(query: string): ZoteroItem[] {
-        if (query.length < 2) return []; // 避免输入太短时触发大量计算
+        // Avoid querying for very short strings
+        if (query.length < 2) return [];
 
         const sql = `
             SELECT 
@@ -48,17 +49,17 @@ export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
 
         const results = this.db.exec(sql, [`%${query}%`]);
         if (results.length === 0 || !results[0]) return [];
-        // console.log("SQL 查询结果:", results);
+
         return results[0].values.map((row: string[]) => {
-            const itemKey = row[0] || "";       // 主条目 Key
+            const itemKey = row[0] || "";       // Main item Key
             const title = row[1] || "";
-            const attachKey = row[2];     // 附件自己的 Key (例如 UQPBFB3K)
+            const attachKey = row[2];     // Attachment's own Key (e.g., UQPBFB3K)
 
             const rawPath = row[3] || "";
             const contentType = row[4] || "";
             if (!attachKey || !rawPath) {
-                // 如果没有附件 Key 或路径，说明没有 PDF 附件
-                // new Notice(`条目 "${title}" 没有找到 PDF 附件`);
+                // If there is no attachment key or path, it means there is no PDF attachment
+
                 return {
                     key: itemKey,
                     title: title,
@@ -68,11 +69,12 @@ export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
             }
 
             const fullPath = path.join(this.zoteroDataDir, "storage", attachKey, rawPath.replace(/^storage:/, ""));
-            // 更精细的类型判断
+
             let type = "File";
             if (contentType.includes("pdf")) type = "PDF";
             else if (contentType.includes("html")) type = "HTML";
             else if (rawPath.endsWith(".epub")) type = "EPUB";
+            else type = "Other";
 
             return {
                 key: itemKey,
@@ -81,24 +83,23 @@ export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
                 type: type
             };
         }).filter((item: ZoteroItem) => {
-            // --- 核心过滤逻辑 ---
-            if (!item.fullPath) return false; // 如果没有附件，不保留条目
 
-            // 获取后缀名（例如从 "paper.png" 得到 "png"）
+            if (!item.fullPath) return false; // if no attachment, skip
+
+            // Get the file extension in lowercase without the dot
             const fileExt = path.extname(item.fullPath).toLowerCase().replace('.', '');
 
-            // 如果后缀在排除列表中，则过滤掉（返回 false）
+            // If the file extension is in the excluded list, skip this item
             const isExcluded = this.excludedExtensions.some(ext => ext.toLowerCase().trim() === fileExt);
 
             return !isExcluded;
         });
     }
 
-    // 渲染下拉列表的每一行
+    // Render each row in the dropdown list
     renderSuggestion(item: ZoteroItem, el: HTMLElement) {
         const container = el.createEl("div", { cls: "zotero-cite-pdf-result-item" });
-
-        // 直接创建，不赋值给变量
+        
         container.createEl("span", {
             text: item.type,
             cls: `zotero-cite-pdf-tag tag-${item.type.toLowerCase().replace(/\s+/g, '-')}`
@@ -109,27 +110,24 @@ export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
         container.createEl("small", { text: ` [${item.key}]`, cls: "zotero-cite-pdf-key" });
     }
 
-    // 用户点击某一项后的动作
+    // Handle selection of a suggestion
     onChooseSuggestion(item: ZoteroItem, evt: MouseEvent | KeyboardEvent) {
         const view = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (!view) return;
 
-        // const cursor = view.editor.getCursor();
-
-        // 1. 处理路径：去掉 storage: 前缀并编码
         if (!item.fullPath) {
-            new Notice(`条目 "${item.title}" 没有找到 PDF 附件`);
+            new Notice(`Item "${item.title}" does not have a PDF attachment`);
             return;
         };
-        // const cleanPath = item.pdfPath.replace(/^storage:/, '');
-        // 如果是相对路径，拼凑成完整路径（可选，取决于你的协议处理器如何处理）
+
+        // Ensure the fullPath is properly encoded for URL usage
         const finalPath = encodeURIComponent(item.fullPath);
 
-        // 2. 构建自定义协议链接
-        // 格式：[{title}](obsidian://cite-zotero-pdf?fullPath={fullPath}&type={type})
+
+        // Format: [{title}](obsidian://zotero-cite-pdf?fullPath={fullPath}&type={type})
         const link = `[${item.title}](obsidian://zotero-cite-pdf?fullPath=${finalPath}&type=${item.type})`;
 
-        // 3. 插入到编辑器
+        // Insert into editor
         view.editor.replaceSelection(link);
     }
 }

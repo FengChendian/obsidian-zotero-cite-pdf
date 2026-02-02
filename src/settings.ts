@@ -6,13 +6,10 @@ import { t } from "./lang/lang-helper";
 
 export interface ZoteroCitePDFPluginSettings {
 	mySetting: string;
-	// 1. 默认打开程序路径
 	pdfAppPath: string;
 	browserAppPath: string;
-	// 2. Zotero 数据库路径
 	zoteroDatabaseDir: string;
 	zoteroDatabaseSqlFile: string;
-	// 3. 排除的文件类型 (使用数组存储)
 	excludedExtensions: string[];
 }
 
@@ -34,8 +31,6 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 	async pickManualPath(): Promise<string | null> {
 		const isWin = window.process.platform === 'win32';
 
-		// 根据系统定义过滤器
-		// Windows 找 .exe 或 .bat，Mac 找 .app
 		const filters = isWin
 			? [{ name: '可执行文件', extensions: ['exe', 'bat', 'cmd'] }]
 			: [{ name: '应用程序', extensions: ['app'] }];
@@ -55,8 +50,6 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 			return result.filePaths[0] as string;
 		} catch (error) {
 			console.error("手动选择路径失败:", error);
-			// 可以加一个 Obsidian 的 Notice 提醒用户
-			// new Notice("无法打开文件选择器");
 			return null;
 		}
 	}
@@ -65,7 +58,7 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		// 辅助函数：调用系统文件选择器
+		// Axiliary function to pick file or folder path
 		const pickPath = async (isFolder: boolean, extensions?: string[]) => {
 
 			const result = await window.electron.remote.dialog.showOpenDialog({
@@ -75,12 +68,10 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 			return result.canceled ? null : result.filePaths[0] as string;
 		};
 
-		// new Setting(containerEl).setName('插件设置').setDesc('配置 Zotero Cite PDF 插件的各项参数');
-		// --- 1. 应用程序路径选择 ---
 		this.addPathSetting(t('OPEN_PDF_SETTINGS_NAME'), 'pdfAppPath', ['exe', 'app']);
 		this.addPathSetting(t('OPEN_BROWSER_SETTINGS_NAME'), 'browserAppPath', ['exe', 'app']);
 
-		// --- 2. Zotero 数据库选择 (限定 .sqlite) ---
+		// Setting for Zotero database location
 		new Setting(containerEl)
 			.setName(t('ZOTERO_DATABASE_LOCATION'))
 			.setDesc(t('SELECT_ZOTERO_DATABASE_FOLDER'))
@@ -100,7 +91,7 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.zoteroDatabaseDir)
 				.setDisabled(true)); // 禁用手动输入，防止出错
 
-		// --- 3. 排除文件类型 (保持手动输入，因为这更像标签管理) ---
+		// Setting for excluded file extensions
 		new Setting(containerEl)
 			.setName(t('EXCLUDED_FILE_EXTENSIONS'))
 			.setDesc(t('EXCLUDED_FILE_EXTENSIONS_DESC'))
@@ -116,7 +107,7 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 		return;
 	}
 
-	// 封装一个通用的路径选择 Setting 项
+	// Axiliary function to add path setting
 	addPathSetting(name: string, settingKey: keyof ZoteroCitePDFPluginSettings, exts: string[]) {
 		new Setting(this.containerEl)
 			.setName(`${name}`)

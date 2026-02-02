@@ -1,10 +1,9 @@
-// 声明 Electron 接口防止报错
-// 定义返回结果的结构
+// Declare additional types for the Window interface to include Electron's dialog module
 interface OpenDialogReturnValue {
     canceled: boolean;
     filePaths: string[];
 }
-// 定义配置项的结构 (这里列举常用项)
+
 interface OpenDialogOptions {
     title?: string;
     defaultPath?: string;
@@ -19,7 +18,6 @@ interface Window {
     electron: {
         remote: {
             dialog: {
-                // 使用具体的类型代替 any
                 showOpenDialog(options: OpenDialogOptions): Promise<OpenDialogReturnValue>;
             };
         };
