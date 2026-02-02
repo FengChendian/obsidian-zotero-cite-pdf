@@ -1,7 +1,9 @@
 import { App, SuggestModal, MarkdownView, Notice } from "obsidian";
 import path from "node:path";
-import { Database } from "sql.js";
+import initSqlJs, { Database } from "sql.js";
 import { t } from "./lang/lang-helper";
+import fs from 'node:fs';
+import wasmBinary from "../node_modules/sql.js/dist/sql-wasm.wasm";
 
 interface ZoteroItem {
     key: string;
@@ -13,22 +15,10 @@ interface ZoteroItem {
 export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
     db: Database;
     // zoteroDataDir: string;
+    databaseAbsolutePath: string
     excludedExtensions: string[];
-
-    constructor(app: App, db: Database, excludedExtensions: string[]) {
-        super(app);
-        this.db = db;
-        // this.zoteroDataDir = zoteroDataDir;
-        this.excludedExtensions = excludedExtensions;
-        this.setPlaceholder(t('SEARCH_MODAL_DESCRIPTION'));
-    }
-
-    // According to the query, return matching Zotero items
-    getSuggestions(query: string): ZoteroItem[] {
-        // Avoid querying for very short strings
-        if (query.length < 2) return [];
-
-        const sql = `
+    lastModifiedTime: number = 0;
+    sql = `
             SELECT 
                 items.key AS itemKey,    
                 itemDataValues.value AS title, 
@@ -47,7 +37,53 @@ export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
             LIMIT 30;
         `;
 
-        const results = this.db.exec(sql, [`%${query}%`]);
+    constructor(app: App, databaseAbsolutePath: string, excludedExtensions: string[]) {
+        super(app);
+        // this.zoteroDataDir = zoteroDataDir;
+        this.databaseAbsolutePath = databaseAbsolutePath;
+        this.excludedExtensions = excludedExtensions;
+        this.setPlaceholder(t('SEARCH_MODAL_DESCRIPTION'));
+    }
+
+    async tryInitZoteroDatabase(absolutePath: string) {
+        const stats = fs.statSync(absolutePath);
+        const currentModifiedTime = stats.mtimeMs;
+
+        if (!this.db || this.lastModifiedTime !== currentModifiedTime) {
+            if (this.db) {
+                this.db.close();
+            }
+
+            this.db = await this.loadDatabase(absolutePath);
+            this.lastModifiedTime = currentModifiedTime;
+
+            try {
+                // 某些版本的 SQLite 环境支持 query_only
+                // Some versions of SQLite environment support query_only
+                this.db.run("PRAGMA query_only = ON;");
+            } catch (e) {
+                console.warn("PRAGMA query_only not supported, falling back to manual read-only logic. Error:", e);
+            }
+        }
+    }
+
+    async loadDatabase(absolutePath: string): Promise<Database> {
+        const SQL = await initSqlJs({
+            wasmBinary: wasmBinary
+        });
+        const fileBuffer = fs.readFileSync(absolutePath);
+        return new SQL.Database(new Uint8Array(fileBuffer));
+    }
+
+    // According to the query, return matching Zotero items
+    async getSuggestions(query: string): Promise<ZoteroItem[]> {
+        // Avoid querying for very short strings
+        if (query.length < 2) return [];
+
+        await this.tryInitZoteroDatabase(this.databaseAbsolutePath);
+
+        const results = this.db.exec(this.sql, [`%${query}%`]);
+
         if (results.length === 0 || !results[0]) return [];
 
         return results[0].values.map((row: string[]) => {
