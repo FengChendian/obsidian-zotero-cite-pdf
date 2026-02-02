@@ -1,18 +1,16 @@
 import { Editor, MarkdownView, Plugin, ObsidianProtocolData, Platform } from 'obsidian';
 import { DEFAULT_SETTINGS, ZoteroCitePDFPluginSettings, ZoteroCiteSettingTab, DEFAULT_DEVICE_SETTINGS, DeviceSpecificSettings } from "./settings";
-import fs from 'node:fs';
-import initSqlJs, { Database } from "sql.js";
 import open from 'open';
 import { ZoteroSearchModal } from 'search-modal';
-import wasmBinary from "../node_modules/sql.js/dist/sql-wasm.wasm";
+
 import os from 'os';
 import path from 'node:path';
 
 
 export default class ZoteroCitePDFPlugin extends Plugin {
 	settings: ZoteroCitePDFPluginSettings;
-	db: Database;
 	deviceIdentifier: string;
+
 
 	async onload() {
 		this.deviceIdentifier = await this.getDeviceIdentifier();
@@ -22,8 +20,8 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 		// This creates an icon in the left ribbon.
 		this.addRibbonIcon('library', 'Search literature', async (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
-			await this.tryInitZoteroDatabase(this.currentDeviceSettings.zoteroDatabaseSqlFile);
-			new ZoteroSearchModal(this.app, this.db, this.settings.excludedExtensions).open();
+			// await this.tryInitZoteroDatabase(this.currentDeviceSettings.zoteroDatabaseSqlFile);
+			new ZoteroSearchModal(this.app, this.currentDeviceSettings.zoteroDatabaseSqlFile, this.settings.excludedExtensions).open();
 		});
 
 		// This adds a open command that can be triggered anywhere
@@ -33,8 +31,8 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
 				// try initialize the database if not already done
-				await this.tryInitZoteroDatabase(this.currentDeviceSettings.zoteroDatabaseSqlFile);
-				new ZoteroSearchModal(this.app, this.db, this.settings.excludedExtensions).open();
+				// await this.tryInitZoteroDatabase(this.currentDeviceSettings.zoteroDatabaseSqlFile);
+				new ZoteroSearchModal(this.app, this.currentDeviceSettings.zoteroDatabaseSqlFile, this.settings.excludedExtensions).open();
 			}
 		});
 
@@ -54,7 +52,7 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 			if (Platform.isWin) {
 				// ensure Windows style slashes
 				finalPath = path.win32.normalize(finalPath);
-				finalPath = `"${finalPath}"`; 
+				finalPath = `"${finalPath}"`;
 			} else {
 				// ensure POSIX style slashes for macOS/Linux
 				finalPath = path.posix.normalize(finalPath);
@@ -101,29 +99,6 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 		// localStorage.setItem('zotero-cite-pdf-device-name', deviceName);
 		return deviceName;
 	}
-
-	async tryInitZoteroDatabase(absolutePath: string) {
-
-		if (!this.db) {
-			this.db = await this.loadDatabase(absolutePath);
-			try {
-				// 某些版本的 SQLite 环境支持 query_only
-				// Some versions of SQLite environment support query_only
-				this.db.run("PRAGMA query_only = ON;");
-			} catch (e) {
-				console.warn("PRAGMA query_only not supported, falling back to manual read-only logic. Error:", e);
-			}
-		}
-	}
-
-	async loadDatabase(absolutePath: string): Promise<Database> {
-		const SQL = await initSqlJs({
-			wasmBinary: wasmBinary
-		});
-		const fileBuffer = fs.readFileSync(absolutePath);
-		return new SQL.Database(new Uint8Array(fileBuffer));
-	}
-
 
 	onunload() {
 	}
