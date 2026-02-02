@@ -54,8 +54,10 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 
 			if (Platform.isWin) {
 				finalPath = path.win32.normalize(finalPath);
+				finalPath = `"${finalPath}"`;
 			}
 
+			console.log(finalPath)
 			if (type === 'PDF') {
 				await open(
 					finalPath,
