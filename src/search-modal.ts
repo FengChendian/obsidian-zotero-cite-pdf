@@ -1,6 +1,7 @@
 import { App, SuggestModal, MarkdownView, Notice } from "obsidian";
 import path from "node:path";
 import { Database } from "sql.js";
+import { t } from "./lang/lang-helper";
 
 interface ZoteroItem {
     key: string;
@@ -19,7 +20,7 @@ export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
         this.db = db;
         this.zoteroDataDir = zoteroDataDir;
         this.excludedExtensions = excludedExtensions;
-        this.setPlaceholder("输入文献标题进行模糊搜索...");
+        this.setPlaceholder(t('SEARCH_MODAL_DESCRIPTION'));
     }
 
     // According to the query, return matching Zotero items

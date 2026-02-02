@@ -14,6 +14,12 @@ const en: LanguageMap = {
     USE_DEFAULT_APP: "Use Default Application",
     EXPLORE_FILE: "Explore",
     SELECT_FOLDER: "Select Folder",
+
+    EXECUTABALE_FILE: "Executable File",
+    APPLICATION_FILE: "Application",
+    
+    // Search modal
+    SEARCH_MODAL_DESCRIPTION: "Type to search literature by title",
 };
 
 export default en;

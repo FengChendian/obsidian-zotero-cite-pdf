@@ -13,4 +13,9 @@ export default {
     USE_DEFAULT_APP: "使用系统默认程序打开",
     EXPLORE_FILE: "浏览",
     SELECT_FOLDER: "选择文件夹",
+
+    EXECUTABALE_FILE: "可执行文件",
+
+    // Search modal
+    SEARCH_MODAL_DESCRIPTION: "输入文献标题进行模糊搜索...",
 };

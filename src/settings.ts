@@ -21,6 +21,7 @@ export const DEFAULT_SETTINGS: ZoteroCitePDFPluginSettings = {
 	zoteroDatabaseSqlFile: '',
 	excludedExtensions: []
 }
+
 export class ZoteroCiteSettingTab extends PluginSettingTab {
 	plugin: ZoteroCitePDFPlugin;
 
@@ -28,17 +29,18 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
+
 	async pickManualPath(): Promise<string | null> {
 		const isWin = window.process.platform === 'win32';
 
 		const filters = isWin
-			? [{ name: '可执行文件', extensions: ['exe', 'bat', 'cmd'] }]
-			: [{ name: '应用程序', extensions: ['app'] }];
+			? [{ name: t('EXECUTABALE_FILE'), extensions: ['exe', 'bat', 'cmd'] }]
+			: [{ name: t('APPLICATION_FILE'), extensions: ['app'] }];
 
 		try {
-			// 调用 Electron 原生选择框
+			// use Electron's dialog to open file picker
 			const result = await window.electron.remote.dialog.showOpenDialog({
-				title: '请手动选择应用程序',
+				title: t('EXPLORE_FILE'),
 				properties: ['openFile'],
 				filters: filters
 			}) as { canceled: boolean; filePaths: string[] };
@@ -49,7 +51,7 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 
 			return result.filePaths[0] as string;
 		} catch (error) {
-			console.error("手动选择路径失败:", error);
+			console.error("Error:", error);
 			return null;
 		}
 	}
@@ -83,13 +85,13 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 						this.plugin.settings.zoteroDatabaseDir = dirPath;
 						this.plugin.settings.zoteroDatabaseSqlFile = path.join(dirPath, "zotero.sqlite");
 						await this.plugin.saveSettings();
-						this.display(); // 刷新页面显示新路径
+						this.display();
 					}
 				}))
 			.addText(text => text
 				.setPlaceholder('未选择路径')
 				.setValue(this.plugin.settings.zoteroDatabaseDir)
-				.setDisabled(true)); // 禁用手动输入，防止出错
+				.setDisabled(true));
 
 		// Setting for excluded file extensions
 		new Setting(containerEl)

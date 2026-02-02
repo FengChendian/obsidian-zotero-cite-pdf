@@ -19,6 +19,7 @@ export function t(str: keyof typeof en): string {
     // getLanguage() 返回格式通常为 "en", "zh-cn" 等
     const locale = window.localStorage.getItem('language') || "en"; 
     // 注意：官方 API 在某些环境中可能通过以下方式获取
+    // Note: The official API may obtain it in some environments as follows
     const currentLang: string = (window.app).getLanguage?.() || locale;
 
     const lang = localeMap[currentLang] || localeMap["en"];
