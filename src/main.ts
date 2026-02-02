@@ -50,9 +50,11 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 
 			fullPath = normalize(decodeURIComponent(fullPath));
 
-			const isWindows = Platform.isWin;
-			fullPath = isWindows ? `"${fullPath}"` : fullPath;
-			const finalPath = path.join(this.currentDeviceSettings.zoteroDatabaseDir, fullPath);
+			let finalPath = path.join(this.currentDeviceSettings.zoteroDatabaseDir, fullPath);
+
+			if (Platform.isWin) {
+				finalPath = path.win32.normalize(finalPath);
+			}
 
 			if (type === 'PDF') {
 				await open(
