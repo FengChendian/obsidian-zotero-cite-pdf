@@ -1,24 +1,29 @@
-import { Editor, MarkdownView, Plugin, ObsidianProtocolData } from 'obsidian';
-import { DEFAULT_SETTINGS, ZoteroCitePDFPluginSettings, ZoteroCiteSettingTab } from "./settings";
+import { Editor, MarkdownView, Plugin, ObsidianProtocolData, Platform } from 'obsidian';
+import { DEFAULT_SETTINGS, ZoteroCitePDFPluginSettings, ZoteroCiteSettingTab, DEFAULT_DEVICE_SETTINGS, DeviceSpecificSettings } from "./settings";
 import fs from 'node:fs';
 import initSqlJs, { Database } from "sql.js";
 import open from 'open';
 import { ZoteroSearchModal } from 'search-modal';
 import wasmBinary from "../node_modules/sql.js/dist/sql-wasm.wasm";
+import { normalize } from 'path';
+import os from 'os';
+
 
 export default class ZoteroCitePDFPlugin extends Plugin {
 	settings: ZoteroCitePDFPluginSettings;
 	db: Database;
+	deviceIdentifier: string;
 
 	async onload() {
+		this.deviceIdentifier = await this.getDeviceIdentifier();
 		await this.loadSettings();
 
 
 		// This creates an icon in the left ribbon.
 		this.addRibbonIcon('library', 'Search literature', async (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
-			await this.tryInitZoteroDatabase(this.settings.zoteroDatabaseSqlFile);
-			new ZoteroSearchModal(this.app, this.db, this.settings.zoteroDatabaseDir, this.settings.excludedExtensions).open();
+			await this.tryInitZoteroDatabase(this.currentDeviceSettings.zoteroDatabaseSqlFile);
+			new ZoteroSearchModal(this.app, this.db, this.currentDeviceSettings.zoteroDatabaseDir, this.settings.excludedExtensions).open();
 		});
 
 		// This adds a open command that can be triggered anywhere
@@ -28,8 +33,8 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
 				// try initialize the database if not already done
-				await this.tryInitZoteroDatabase(this.settings.zoteroDatabaseSqlFile);
-				new ZoteroSearchModal(this.app, this.db, this.settings.zoteroDatabaseDir, this.settings.excludedExtensions).open();
+				await this.tryInitZoteroDatabase(this.currentDeviceSettings.zoteroDatabaseSqlFile);
+				new ZoteroSearchModal(this.app, this.db, this.currentDeviceSettings.zoteroDatabaseDir, this.settings.excludedExtensions).open();
 			}
 		});
 
@@ -38,22 +43,27 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 
 		// Register Obsidian protocol handler for zotero-cite-pdf
 		this.registerObsidianProtocolHandler("zotero-cite-pdf", async (params: ObsidianProtocolData) => {
-			const fullPath = params.fullPath;
+			let fullPath: string | undefined = params.fullPath;
 			const type = params.type;
 			if (!fullPath) return;
 
+			fullPath = normalize(decodeURIComponent(fullPath));
+
+			const isWindows = Platform.isWin;
+			const finalPath = isWindows ? `"${fullPath}"` : fullPath;
+
 			if (type === 'PDF') {
 				await open(
-					fullPath,
-					{ app: { name: this.settings.pdfAppPath } }
+					finalPath,
+					{ app: { name: this.currentDeviceSettings.pdfAppPath } }
 				);
 			}
 			// open with browser for non-PDF types
 			else {
 				await
 					open(
-						fullPath,
-						{ app: { name: this.settings.browserAppPath } }
+						finalPath,
+						{ app: { name: this.currentDeviceSettings.browserAppPath } }
 					)
 			}
 
@@ -61,39 +71,26 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 
 	}
 
-	async searchZotero(keyword: string, zoteroDataDir: string) {
-		const sql = `
-        SELECT 
-            p.key, 
-            v.value AS title, 
-            att.path
-        FROM items p
-        JOIN itemData d ON p.itemID = d.itemID
-        JOIN fields f ON d.fieldID = f.fieldID AND f.fieldName = 'title'
-        JOIN itemDataValues v ON d.valueID = v.valueID
-        LEFT JOIN itemAttachments att ON p.itemID = att.parentItemID
-        WHERE v.value LIKE ? 
-          AND p.itemID NOT IN (SELECT itemID FROM deletedItems)
-    `;
+	async getDeviceIdentifier(): Promise<string> {
 
-		// 使用 %keyword% 进行模糊匹配
-		// Use %keyword% for fuzzy matching
-		const results = this.db.exec(sql, [`%${keyword}%`]);
-
-		if (results.length === 0 || !results || !results[0]) return [];
-
-		return results[0].values.map(row => {
-			const itemKey = row[0] as string;
-			const title = row[1];
-			let fullPath = null;
-
-			if (row[2] && itemKey) {
-				const fileName = String(row[2]).replace(/^storage:/, '');
-				fullPath = `${zoteroDataDir}/storage/${itemKey}/${fileName}`;
+		let deviceName: string | null = null;
+		if (Platform.isDesktop) {
+			try {
+				deviceName = os.hostname();
+			} catch (e) {
+				deviceName = 'Desktop-Unknown';
+				console.error("Error getting hostname:", e);
+				// Fallback to generic desktop name
 			}
-
-			return { title, fullPath, key: itemKey };
-		});
+		} else {
+			deviceName = Platform.isIosApp ? 'iPhone/iPad' : 'Android-Device';
+		}
+		if (!deviceName) {
+			deviceName = 'default';
+		}
+		// 保存到本地存储，下次直接读取
+		// localStorage.setItem('zotero-cite-pdf-device-name', deviceName);
+		return deviceName;
 	}
 
 	async tryInitZoteroDatabase(absolutePath: string) {
@@ -123,7 +120,17 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<ZoteroCitePDFPluginSettings>);
+		const loadedData = await this.loadData() as ZoteroCitePDFPluginSettings;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
+
+		// 确保当前设备的配置初始化
+		if (!this.settings.devices[this.deviceIdentifier]) {
+			this.settings.devices[this.deviceIdentifier] = { ...DEFAULT_DEVICE_SETTINGS };
+		}
+	}
+
+	get currentDeviceSettings(): DeviceSpecificSettings {
+		return this.settings.devices[this.deviceIdentifier] ?? DEFAULT_DEVICE_SETTINGS;
 	}
 
 	async saveSettings() {

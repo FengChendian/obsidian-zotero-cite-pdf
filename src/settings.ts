@@ -3,23 +3,29 @@ import ZoteroCitePDFPlugin from "./main";
 import path from "node:path";
 import { t } from "./lang/lang-helper";
 
-
-export interface ZoteroCitePDFPluginSettings {
-	mySetting: string;
+export interface DeviceSpecificSettings {
 	pdfAppPath: string;
 	browserAppPath: string;
 	zoteroDatabaseDir: string;
 	zoteroDatabaseSqlFile: string;
-	excludedExtensions: string[];
 }
 
-export const DEFAULT_SETTINGS: ZoteroCitePDFPluginSettings = {
-	mySetting: 'default',
+export interface ZoteroCitePDFPluginSettings {
+	excludedExtensions: string[]; // Global excluded file extensions
+	devices: Record<string, DeviceSpecificSettings>; // Device-specific settings
+}
+
+export const DEFAULT_DEVICE_SETTINGS: DeviceSpecificSettings = {
 	pdfAppPath: '',
 	browserAppPath: '',
 	zoteroDatabaseDir: '',
 	zoteroDatabaseSqlFile: '',
-	excludedExtensions: []
+};
+
+// 插件启动时的总默认值
+export const DEFAULT_SETTINGS: ZoteroCitePDFPluginSettings = {
+	excludedExtensions: [],
+	devices: {}
 }
 
 export class ZoteroCiteSettingTab extends PluginSettingTab {
@@ -58,6 +64,7 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 
 	display(): void {
 		const { containerEl } = this;
+		const deviceSettings = this.plugin.settings.devices[this.plugin.deviceIdentifier] || DEFAULT_DEVICE_SETTINGS;
 		containerEl.empty();
 
 		// Axiliary function to pick file or folder path
@@ -70,8 +77,8 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 			return result.canceled ? null : result.filePaths[0] as string;
 		};
 
-		this.addPathSetting(t('OPEN_PDF_SETTINGS_NAME'), 'pdfAppPath', ['exe', 'app']);
-		this.addPathSetting(t('OPEN_BROWSER_SETTINGS_NAME'), 'browserAppPath', ['exe', 'app']);
+		this.addPathSetting(t('OPEN_PDF_SETTINGS_NAME'), 'pdfAppPath', ['exe', 'app'], deviceSettings);
+		this.addPathSetting(t('OPEN_BROWSER_SETTINGS_NAME'), 'browserAppPath', ['exe', 'app'], deviceSettings);
 
 		// Setting for Zotero database location
 		new Setting(containerEl)
@@ -82,15 +89,15 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 				.onClick(async () => {
 					const dirPath = await pickPath(true);
 					if (dirPath) {
-						this.plugin.settings.zoteroDatabaseDir = dirPath;
-						this.plugin.settings.zoteroDatabaseSqlFile = path.join(dirPath, "zotero.sqlite");
+						deviceSettings.zoteroDatabaseDir = dirPath;
+						deviceSettings.zoteroDatabaseSqlFile = path.join(dirPath, "zotero.sqlite");
 						await this.plugin.saveSettings();
 						this.display();
 					}
 				}))
 			.addText(text => text
 				.setPlaceholder('未选择路径')
-				.setValue(this.plugin.settings.zoteroDatabaseDir)
+				.setValue(deviceSettings.zoteroDatabaseDir)
 				.setDisabled(true));
 
 		// Setting for excluded file extensions
@@ -110,7 +117,7 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 	}
 
 	// Axiliary function to add path setting
-	addPathSetting(name: string, settingKey: keyof ZoteroCitePDFPluginSettings, exts: string[]) {
+	addPathSetting(name: string, settingKey: keyof DeviceSpecificSettings, exts: string[], deviceSettings: DeviceSpecificSettings) {
 		new Setting(this.containerEl)
 			.setName(`${name}`)
 			.setDesc(t('OPEN_FILE_DESC'))
@@ -121,16 +128,16 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 						properties: ['openFile']
 					}) as { canceled: boolean; filePaths: string[] };
 					if (!path.canceled) {
-						(this.plugin.settings[settingKey] as string) = path.filePaths[0] as string;
+						(deviceSettings[settingKey]) = path.filePaths[0] as string;
 						await this.plugin.saveSettings();
 						this.display();
 					}
 				}))
 			.addText(text => text
-				.setValue((this.plugin.settings)[settingKey] as string)
+				.setValue((deviceSettings)[settingKey])
 				.setPlaceholder(t('USE_DEFAULT_APP'))
 				.onChange(async (val) => {
-					(this.plugin.settings[settingKey] as string) = val;
+					(deviceSettings[settingKey]) = val;
 					await this.plugin.saveSettings();
 				}));
 	}

@@ -11,6 +11,7 @@ interface OpenDialogOptions {
     filters?: { name: string; extensions: string[] }[];
     properties?: Array<'openFile' | 'openDirectory' | 'multiSelections' | 'showHiddenFiles'>;
 }
+
 interface Window {
     app: {
         getLanguage?: () => string;

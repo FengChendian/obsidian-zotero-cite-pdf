@@ -99,7 +99,7 @@ export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
     // Render each row in the dropdown list
     renderSuggestion(item: ZoteroItem, el: HTMLElement) {
         const container = el.createEl("div", { cls: "zotero-cite-pdf-result-item" });
-        
+
         container.createEl("span", {
             text: item.type,
             cls: `zotero-cite-pdf-tag tag-${item.type.toLowerCase().replace(/\s+/g, '-')}`
