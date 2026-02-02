@@ -5,7 +5,6 @@ import initSqlJs, { Database } from "sql.js";
 import open from 'open';
 import { ZoteroSearchModal } from 'search-modal';
 import wasmBinary from "../node_modules/sql.js/dist/sql-wasm.wasm";
-import { normalize } from 'path';
 import os from 'os';
 import path from 'node:path';
 
@@ -48,13 +47,17 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 			const type = params.type;
 			if (!fullPath) return;
 
-			fullPath = normalize(decodeURIComponent(fullPath));
+			let sanitizedPath = decodeURIComponent(fullPath).replace(/\\/g, '/');
 
-			let finalPath = path.join(this.currentDeviceSettings.zoteroDatabaseDir, fullPath);
+			let finalPath = path.resolve(this.currentDeviceSettings.zoteroDatabaseDir, sanitizedPath);
 
 			if (Platform.isWin) {
+				// ensure Windows style slashes
 				finalPath = path.win32.normalize(finalPath);
-				finalPath = `"${finalPath}"`;
+				finalPath = `"${finalPath}"`; 
+			} else {
+				// ensure POSIX style slashes for macOS/Linux
+				finalPath = path.posix.normalize(finalPath);
 			}
 
 			// console.log(finalPath)
