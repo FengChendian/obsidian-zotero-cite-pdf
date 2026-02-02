@@ -7,6 +7,7 @@ import { ZoteroSearchModal } from 'search-modal';
 import wasmBinary from "../node_modules/sql.js/dist/sql-wasm.wasm";
 import { normalize } from 'path';
 import os from 'os';
+import path from 'node:path';
 
 
 export default class ZoteroCitePDFPlugin extends Plugin {
@@ -23,7 +24,7 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 		this.addRibbonIcon('library', 'Search literature', async (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
 			await this.tryInitZoteroDatabase(this.currentDeviceSettings.zoteroDatabaseSqlFile);
-			new ZoteroSearchModal(this.app, this.db, this.currentDeviceSettings.zoteroDatabaseDir, this.settings.excludedExtensions).open();
+			new ZoteroSearchModal(this.app, this.db, this.settings.excludedExtensions).open();
 		});
 
 		// This adds a open command that can be triggered anywhere
@@ -34,7 +35,7 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
 				// try initialize the database if not already done
 				await this.tryInitZoteroDatabase(this.currentDeviceSettings.zoteroDatabaseSqlFile);
-				new ZoteroSearchModal(this.app, this.db, this.currentDeviceSettings.zoteroDatabaseDir, this.settings.excludedExtensions).open();
+				new ZoteroSearchModal(this.app, this.db, this.settings.excludedExtensions).open();
 			}
 		});
 
@@ -50,7 +51,8 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 			fullPath = normalize(decodeURIComponent(fullPath));
 
 			const isWindows = Platform.isWin;
-			const finalPath = isWindows ? `"${fullPath}"` : fullPath;
+			fullPath = isWindows ? `"${fullPath}"` : fullPath;
+			const finalPath = path.join(this.currentDeviceSettings.zoteroDatabaseDir, fullPath);
 
 			if (type === 'PDF') {
 				await open(

@@ -12,13 +12,13 @@ interface ZoteroItem {
 
 export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
     db: Database;
-    zoteroDataDir: string;
+    // zoteroDataDir: string;
     excludedExtensions: string[];
 
-    constructor(app: App, db: Database, zoteroDataDir: string, excludedExtensions: string[]) {
+    constructor(app: App, db: Database, excludedExtensions: string[]) {
         super(app);
         this.db = db;
-        this.zoteroDataDir = zoteroDataDir;
+        // this.zoteroDataDir = zoteroDataDir;
         this.excludedExtensions = excludedExtensions;
         this.setPlaceholder(t('SEARCH_MODAL_DESCRIPTION'));
     }
@@ -68,7 +68,7 @@ export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
                 };
             }
 
-            const fullPath = path.join(this.zoteroDataDir, "storage", attachKey, rawPath.replace(/^storage:/, ""));
+            const fullPath = path.join("storage", attachKey, rawPath.replace(/^storage:/, ""));
 
             let type = "File";
             if (contentType.includes("pdf")) type = "PDF";
