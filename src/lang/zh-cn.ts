@@ -15,7 +15,8 @@ export default {
     SELECT_FOLDER: "选择文件夹",
 
     EXECUTABALE_FILE: "可执行文件",
+    APPLICATION_FILE: "应用程序",
 
     // Search modal
-    SEARCH_MODAL_DESCRIPTION: "输入文献标题进行模糊搜索...",
+    SEARCH_MODAL_DESCRIPTION: "输入文献标题进行搜索",
 };

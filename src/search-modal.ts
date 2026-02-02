@@ -30,21 +30,20 @@ export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
 
         const sql = `
             SELECT 
-                items.key AS itemKey,              -- 主条目的 Key
+                items.key AS itemKey,    
                 itemDataValues.value AS title, 
-                attachmentItems.key AS attachmentKey, -- 附件条目自己的 Key (关键！)
+                attachmentItems.key AS attachmentKey, 
                 itemAttachments.path AS pdfPath,
                 itemAttachments.contentType
             FROM items
             JOIN itemData ON items.itemID = itemData.itemID
             JOIN fields ON itemData.fieldID = fields.fieldID AND fields.fieldName = 'title'
             JOIN itemDataValues ON itemData.valueID = itemDataValues.valueID
-            -- 重点：通过 itemAttachments 找到附件的 itemID，再反向连回 items 表拿附件的 Key
             LEFT JOIN itemAttachments ON items.itemID = itemAttachments.parentItemID
             LEFT JOIN items AS attachmentItems ON itemAttachments.itemID = attachmentItems.itemID
             WHERE itemDataValues.value LIKE ? 
             AND items.itemID NOT IN (SELECT itemID FROM deletedItems)
-            AND itemAttachments.path IS NOT NULL       -- 路径不能为空
+            AND itemAttachments.path IS NOT NULL
             LIMIT 30;
         `;
 
