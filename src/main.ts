@@ -1,7 +1,7 @@
-import { Editor, MarkdownView, Plugin, ObsidianProtocolData, Platform } from 'obsidian';
+import { Editor, MarkdownView, Plugin, ObsidianProtocolData, Platform, MarkdownFileInfo } from 'obsidian';
 import { DEFAULT_SETTINGS, ZoteroCitePDFPluginSettings, ZoteroCiteSettingTab, DEFAULT_DEVICE_SETTINGS, DeviceSpecificSettings } from "./settings";
 import open from 'open';
-import { ZoteroSearchModal } from 'search-modal';
+import { ZoteroSearchModal } from './search-modal';
 
 import os from 'os';
 import path from 'node:path';
@@ -29,7 +29,7 @@ export default class ZoteroCitePDFPlugin extends Plugin {
 			id: 'open-zotero-search',
 			name: 'Search Zotero literature',
 
-			editorCallback: async (editor: Editor, view: MarkdownView) => {
+			editorCallback: async (editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
 				// try initialize the database if not already done
 				// await this.tryInitZoteroDatabase(this.currentDeviceSettings.zoteroDatabaseSqlFile);
 				new ZoteroSearchModal(this.app, this.currentDeviceSettings.zoteroDatabaseSqlFile, this.settings.excludedExtensions).open();

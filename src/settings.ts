@@ -105,7 +105,6 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 			.setName(t('EXCLUDED_FILE_EXTENSIONS'))
 			.setDesc(t('EXCLUDED_FILE_EXTENSIONS_DESC'))
 			.addText(text => text
-				// eslint-disable-next-line obsidianmd/ui/sentence-case
 				.setPlaceholder('html, png (examples)')
 				.setValue(this.plugin.settings.excludedExtensions.join(', '))
 				.onChange(async (value) => {

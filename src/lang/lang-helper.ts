@@ -1,3 +1,4 @@
+import { getLanguage } from "obsidian";
 import en from "./en";
 import zhCn from "./zh-cn";
 
@@ -17,7 +18,7 @@ const localeMap: { [k: string]: Partial<typeof en> } = {
 export function t(str: keyof typeof en): string {
     // 获取 Obsidian 界面当前的语言设置 / Get the current language setting of the Obsidian interface
     // getLanguage() 返回格式通常为 "en", "zh-cn" 等
-    const locale = window.localStorage.getItem('language') || "en"; 
+    const locale = getLanguage(); 
     // 注意：官方 API 在某些环境中可能通过以下方式获取
     // Note: The official API may obtain it in some environments as follows
     const currentLang: string = (window.app).getLanguage?.() || locale;

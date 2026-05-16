@@ -1,6 +1,6 @@
 import { App, SuggestModal, MarkdownView, Notice } from "obsidian";
 import path from "node:path";
-import initSqlJs, { Database } from "sql.js";
+import initSqlJs, { Database, type SqlValue } from "sql.js";
 import { t } from "./lang/lang-helper";
 import fs from 'node:fs';
 import wasmBinary from "../node_modules/sql.js/dist/sql-wasm.wasm";
@@ -13,7 +13,7 @@ interface ZoteroItem {
 }
 
 export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
-    db: Database;
+    db: Database | null = null;
     // zoteroDataDir: string;
     databaseAbsolutePath: string
     excludedExtensions: string[];
@@ -82,17 +82,21 @@ export class ZoteroSearchModal extends SuggestModal<ZoteroItem> {
 
         await this.tryInitZoteroDatabase(this.databaseAbsolutePath);
 
+        if (!this.db) {
+            return [];
+        }
+
         const results = this.db.exec(this.sql, [`%${query}%`]);
 
         if (results.length === 0 || !results[0]) return [];
 
-        return results[0].values.map((row: string[]) => {
-            const itemKey = row[0] || "";       // Main item Key
-            const title = row[1] || "";
-            const attachKey = row[2];     // Attachment's own Key (e.g., UQPBFB3K)
+        return results[0].values.map((row: SqlValue[]) => {
+            const itemKey = String(row[0] ?? "");
+            const title = String(row[1] ?? "");
+            const attachKey: string | null = row[2] ? String(row[2]) : null;
 
-            const rawPath = row[3] || "";
-            const contentType = row[4] || "";
+            const rawPath = String(row[3] ?? "");
+            const contentType = String(row[4] ?? "");
             if (!attachKey || !rawPath) {
                 // If there is no attachment key or path, it means there is no PDF attachment
 
