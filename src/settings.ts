@@ -105,7 +105,7 @@ export class ZoteroCiteSettingTab extends PluginSettingTab {
 			.setName(t('EXCLUDED_FILE_EXTENSIONS'))
 			.setDesc(t('EXCLUDED_FILE_EXTENSIONS_DESC'))
 			.addText(text => text
-				.setPlaceholder('html, png (examples)')
+				.setPlaceholder('HTML, PNG, JPG...')
 				.setValue(this.plugin.settings.excludedExtensions.join(', '))
 				.onChange(async (value) => {
 					this.plugin.settings.excludedExtensions = value.split(',').map(s => s.trim().toLowerCase());
